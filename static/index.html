@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScamSloth</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: #000;
+        color: #fff;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin: 0 0 8px;
+      }
+      p {
+        color: #ccc;
+        margin: 0 0 24px;
+      }
+      button {
+        background: #fff;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #ddd;
+      }
+      pre {
+        color: #8f8;
+        margin-top: 16px;
+        min-height: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ScamSloth 🦥</h1>
+    <p>Is this voicemail a scam? Coming soon.</p>
+    <button
+      onclick="
+        fetch('/health')
+          .then((r) => r.json())
+          .then((d) => (out.textContent = JSON.stringify(d)))
+      "
+    >
+      Check server
+    </button>
+    <pre id="out"></pre>
+  </body>
+</html>
