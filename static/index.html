@@ -8,12 +8,9 @@
       * {
         box-sizing: border-box;
       }
-      html,
       body {
         margin: 0;
-        height: 100%;
-      }
-      body {
+        min-height: 100vh;
         background: #000;
         color: #fff;
         font-family:
@@ -35,6 +32,11 @@
         color: #ccc;
         margin: 0 0 24px;
       }
+      input[type="file"] {
+        color: #ccc;
+        margin-bottom: 16px;
+        max-width: 100%;
+      }
       button {
         background: #fff;
         color: #000;
@@ -47,25 +49,116 @@
       button:hover {
         background: #ddd;
       }
-      pre {
-        color: #8f8;
+      button:disabled {
+        background: #555;
+        cursor: wait;
+      }
+      #status {
+        color: #aaa;
         margin-top: 16px;
         min-height: 1.2em;
+      }
+      .card {
+        width: 100%;
+        max-width: 560px;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-top: 16px;
+        text-align: left;
+      }
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 1.25rem;
+      }
+      .scam {
+        border-color: #f55;
+      }
+      .scam h2 {
+        color: #f55;
+      }
+      .safe {
+        border-color: #5d5;
+      }
+      .safe h2 {
+        color: #5d5;
+      }
+      .card ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        color: #ddd;
+      }
+      .transcript {
+        color: #bbb;
+        white-space: pre-wrap;
       }
     </style>
   </head>
   <body>
     <h1>ScamSloth 🦥</h1>
-    <p>Is this voicemail a scam? Coming soon.</p>
-    <button
-      onclick="
-        fetch('/health')
-          .then((r) => r.json())
-          .then((d) => (out.textContent = JSON.stringify(d)))
-      "
-    >
-      Check server
-    </button>
-    <pre id="out"></pre>
+    <p>Upload a voicemail to check if it's a scam.</p>
+    <input type="file" id="file" accept="audio/*,.m4a,.mp3,.wav,.amr" />
+    <button id="go" onclick="analyze()">Check voicemail</button>
+    <div id="status"></div>
+    <div id="verdict" class="card" hidden>
+      <h2 id="verdictTitle"></h2>
+      <ul id="flags"></ul>
+    </div>
+    <div id="transcriptCard" class="card" hidden>
+      <h2>Transcript</h2>
+      <div id="transcript" class="transcript"></div>
+    </div>
+    <script>
+      async function analyze() {
+        const file = document.getElementById("file").files[0];
+        const status = document.getElementById("status");
+        if (!file) {
+          status.textContent = "Pick a voicemail first.";
+          return;
+        }
+        const btn = document.getElementById("go");
+        btn.disabled = true;
+        status.textContent = "Checking… this can take up to a minute.";
+        document.getElementById("verdict").hidden = true;
+        document.getElementById("transcriptCard").hidden = true;
+        try {
+          const form = new FormData();
+          form.append("audio", file);
+          const res = await fetch("/analyze", { method: "POST", body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || res.status);
+          document.getElementById("transcript").textContent = data.transcript;
+          document.getElementById("transcriptCard").hidden = false;
+          if (data.verdict) {
+            const card = document.getElementById("verdict");
+            const scam = data.verdict === "scam";
+            card.className = "card " + (scam ? "scam" : "safe");
+            document.getElementById("verdictTitle").textContent = scam
+              ? "🚨 Scam"
+              : "✅ Not scam";
+            const flags = document.getElementById("flags");
+            flags.innerHTML = "";
+            for (const f of data.red_flags || []) {
+              const li = document.createElement("li");
+              li.textContent = f;
+              flags.appendChild(li);
+            }
+            card.hidden = false;
+          }
+          status.textContent = data.error
+            ? "Model error: " + data.error
+            : "Done in " +
+              data.seconds +
+              "s" +
+              (data.model_seconds
+                ? " (model " + data.model_seconds + "s)"
+                : "");
+        } catch (e) {
+          status.textContent = "Error: " + e.message;
+        } finally {
+          btn.disabled = false;
+        }
+      }
+    </script>
   </body>
 </html>
