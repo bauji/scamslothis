@@ -125,6 +125,14 @@
         color: #ddd;
         font-size: 1.05rem;
       }
+      .card a {
+        color: #9cf;
+      }
+      #numberSummary {
+        color: #ddd;
+        font-size: 1.05rem;
+        margin: 0;
+      }
       .transcript {
         color: #ddd;
         white-space: pre-wrap;
@@ -158,6 +166,11 @@
       <h2 id="verdictTitle"></h2>
       <ul id="flags"></ul>
     </div>
+    <div id="numberCard" class="card" hidden>
+      <h2 id="numberTitle"></h2>
+      <p id="numberSummary"></p>
+      <ul id="reports"></ul>
+    </div>
     <div id="transcriptCard" class="card" hidden>
       <h2>Transcript</h2>
       <div id="transcript" class="transcript"></div>
@@ -176,6 +189,7 @@
         status.textContent = "Checking… this can take up to a minute.";
         spinner.hidden = false;
         document.getElementById("verdict").hidden = true;
+        document.getElementById("numberCard").hidden = true;
         document.getElementById("transcriptCard").hidden = true;
         try {
           const form = new FormData();
@@ -200,6 +214,35 @@
               flags.appendChild(li);
             }
             card.hidden = false;
+          }
+          if (data.number) {
+            document.getElementById("numberTitle").textContent =
+              "📞 Callback number " + data.number.number;
+            const summary = document.getElementById("numberSummary");
+            const list = document.getElementById("reports");
+            list.innerHTML = "";
+            const n = data.number.reports.length;
+            if (data.number.error) {
+              summary.textContent = "Couldn't check this number right now.";
+            } else if (n > 0) {
+              summary.textContent =
+                "Callback number reported as a scam on " +
+                n +
+                (n === 1 ? " site" : " sites");
+              for (const r of data.number.reports) {
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.href = r.link;
+                a.target = "_blank";
+                a.rel = "noopener";
+                a.textContent = r.title;
+                li.appendChild(a);
+                list.appendChild(li);
+              }
+            } else {
+              summary.textContent = "No scam reports found for this number";
+            }
+            document.getElementById("numberCard").hidden = false;
           }
           status.textContent = data.error
             ? "Model error: " + data.error
